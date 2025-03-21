@@ -120,7 +120,7 @@ class Ray
     // Calculate and return the point in space (a Vec3) for this ray for the given value of t
     pointAt(t) 
     {
-        return new Vec3 (this.origin.add(this.direction.scale(t)))
+        return this.origin.add(this.direction.scale(t))
     }
 }
 
@@ -187,11 +187,26 @@ function backgroundColour(ray)
 function rayColour(ray) 
 {
     let castResult = traceRay(ray)
+    let shadow = 0
+    let shadowRay = new Ray(castResult.position, negLightDirection)
     if(castResult.t < 0) return backgroundColour(ray)
+    else {
+        shadowResult = traceRay(shadowRay)
+        if(shadowResult.t >= 0 && castResult.sphereIndex != shadowResult.sphereIndex) {
+            shadow = 0.4 
+        }
+        else {
+            shadow = 0
+        }
+    }
+    let reflect = (lightDirection.minus((castResult.normal).scale(2 * castResult.normal.dot(lightDirection)))).normalised()
+    let viewDir = camPosition.minus(castResult.position).normalised()
+    let specLighting = Math.pow(Math.max(viewDir.dot(reflect), 0), 48) * 0.8
+    let ambientLighting = 0.05
 
     let albedo = spheres[castResult.sphereIndex].colour
     let diffuse = Math.max(castResult.normal.dot(negLightDirection), 0)
-    let colour = albedo.scale(diffuse)
+    let colour = albedo.scale(Math.sqrt(diffuse + ambientLighting + specLighting - shadow))
     return colour
 }
 
